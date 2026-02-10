@@ -35,6 +35,13 @@
     border-color: var(--color-amber-dim);
 }
 
+@utility img-amber {
+    display: block;
+    background-color: var(--color-amber-bright);
+    line-height: 0;
+    overflow: hidden;
+}
+
 @layer base {
     * { box-sizing: border-box; }
 
@@ -71,6 +78,17 @@
 
     blockquote {
         @apply border-l-3 border-amber-dim pl-4 ml-0 opacity-85;
+    }
+
+    img {
+        filter: grayscale(1) contrast(1.1);
+        mix-blend-mode: multiply;
+    }
+
+    article :has(> img) {
+        background-color: var(--color-amber-bright);
+        line-height: 0;
+        overflow: hidden;
     }
 
     button, input, textarea {

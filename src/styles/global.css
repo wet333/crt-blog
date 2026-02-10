@@ -26,6 +26,7 @@
     color: var(--color-bg-black);
     background-color: var(--color-amber-bright);
     text-shadow: none;
+    font-weight: bold;
 }
 
 @utility border-terminal-double {
@@ -59,9 +60,6 @@
 
     a {
         @apply text-amber-bright no-underline border-b border-transparent transition-all duration-200 cursor-pointer;
-    }
-    a:hover {
-        @apply border-b-amber-bright;
     }
 
     pre {

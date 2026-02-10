@@ -22,8 +22,7 @@ const FRAGMENT_SHADER = `
 //
 // Genera una capa de overlay que simula un monitor CRT ambar.
 // El shader produce dos tipos de salida combinados en gl_FragColor:
-//   - RGB (totalAdd): luz que se SUMA sobre el contenido (grain,
-//     beam, haze, interference)
+//   - RGB (totalAdd): sin efectos de luz aditivos actualmente
 //   - Alpha (totalDark): oscuridad que se RESTA del contenido
 //     (scanlines, vignette, flicker)
 //
@@ -39,7 +38,7 @@ uniform vec2 u_resolution;  // tamaño del canvas en pixeles
 // HASH - Generador pseudo-aleatorio
 //
 // Recibe una coordenada 2D y devuelve un valor 0.0 - 1.0.
-// Se usa para generar ruido (grain) e interferencia.
+// Se usa en efectos que necesiten aleatoriedad.
 // No es criptografico; solo necesita verse "aleatorio" visualmente.
 // ----------------------------------------------------------------
 float hash(vec2 p) {
@@ -62,9 +61,11 @@ void main() {
     // y se usa la parte baja de la onda como oscurecimiento.
     //
     // Config:
-    //   0.12 → intensidad de oscuridad (0.0 = sin scanlines, ~0.3 = muy marcadas)
+    //   3.0  → grosor de las scanlines (1.0 = 1px, 2.0 = 2px, 4.0 = 4px, etc.)
+    //   0.25 → intensidad de oscuridad (0.0 = sin scanlines, ~0.3 = muy marcadas)
     // ============================================================
-    float scanlineY = uv.y * u_resolution.y;
+    float scanThickness = 1.0;
+    float scanlineY = uv.y * u_resolution.y / scanThickness;
     float scanline = sin(scanlineY * 3.14159265);
     float scanDark = (1.0 - clamp(scanline, 0.0, 1.0)) * 0.25;
 
@@ -85,94 +86,31 @@ void main() {
     float vigDark = smoothstep(0.6, 1.4, vigDist) * 0.75;
 
     // ============================================================
-    // FLICKER - Parpadeo sutil de brillo
+    // FLICKER - Parpadeo aleatorio de brillo
     //
-    // Simula la inestabilidad electrica de un CRT real. Dos ondas
-    // sinusoidales a frecuencias distintas crean un parpadeo
-    // irregular y sutil.
-    //
-    // Config:
-    //   0.008 → amplitud de la primera onda (mas = parpadeo mas fuerte)
-    //   0.004 → amplitud de la segunda onda
-    //   9.0   → frecuencia de la primera onda (Hz)
-    //   17.3  → frecuencia de la segunda onda (Hz)
-    // ============================================================
-    float flicker = 1.0 + 0.01 * sin(u_time * 9.0) + 0.005 * sin(u_time * 17.3);
-
-    // Combina scanlines + vignette, modulados por flicker
-    float totalDark = clamp((scanDark + vigDark) * flicker, 0.0, 1.0);
-
-    // ============================================================
-    // GRAIN / NOISE - Ruido granulado tipo pelicula
-    //
-    // Genera un valor aleatorio por cada pixel de pantalla,
-    // cambiando 30 veces por segundo para simular ruido analogico.
+    // Simula la inestabilidad electrica de un CRT real. Genera
+    // cambios bruscos de brillo usando valores aleatorios por
+    // frame, como un parpadeo real en vez de una onda suave.
     //
     // Config:
-    //   floor(u_time * 10.0) → 10.0 = fps del ruido (mas = cambio mas rapido)
-    //   0.01 → intensidad del grano (0.0 = sin grano, ~0.05 = muy visible)
+    //   30.0 → fps del parpadeo (mas = cambios mas rapidos)
+    //   0.08 → intensidad maxima del oscurecimiento (0.0 - ~0.15)
     // ============================================================
-    vec2 noiseCoord = floor(uv * u_resolution);
-    float noise = hash(noiseCoord + floor(u_time * 10.0));
-    vec3 grain = amber * noise * 0.01;
+    float flickerDark = (hash(vec2(floor(u_time * 30.0), 0.0)) - 0.5) * 0.08;
 
-    // ============================================================
-    // BEAM - Barra de refresco vertical
-    //
-    // Una banda horizontal brillante que baja lentamente por la
-    // pantalla, simulando el haz de electrones del CRT recorriendo
-    // la pantalla de arriba a abajo.
-    //
-    // Config:
-    //   7.5 → velocidad de desplazamiento (mas alto = mas rapido)
-    //   25.0 → grosor inverso del haz (mas alto = haz mas fino)
-    //   0.025 → brillo maximo del haz (0.0 - ~0.1)
-    // ============================================================
-    float beamPos = fract(u_time * 7.5);
-    float beam = exp(-abs(uv.y - beamPos) * 25.0) * 0.025;
-    vec3 beamColor = amber * beam;
-
-    // ============================================================
-    // HAZE - Resplandor central de fosforo
-    //
-    // Un brillo sutil concentrado en el centro de la pantalla,
-    // simulando la difusion de luz del fosforo. Usa la misma
-    // distancia que el vignette pero para SUMAR luz.
-    //
-    // Config:
-    //   1.0   → velocidad de caida (mas alto = haze mas concentrado al centro)
-    //   0.05 → intensidad del resplandor (0.0 - ~0.03)
-    // ============================================================
-    float haze = exp(-vigDist * 1.0) * 0.05;
-    vec3 hazeColor = amber * haze;
-
-    // ============================================================
-    // INTERFERENCE - Lineas horizontales aleatorias
-    //
-    // Genera lineas brillantes que aparecen brevemente en posiciones
-    // aleatorias, simulando interferencia electromagnetica o
-    // problemas de señal.
-    //
-    // Config:
-    //   0.997 → umbral de aparicion (mas alto = menos frecuente, rango 0.99-0.999)
-    //   floor(u_time * 15.0) → 15.0 = velocidad de cambio temporal
-    //   floor(uv.y * 200.0) → 200.0 = numero de franjas verticales posibles
-    //   0.015 → brillo de cada linea (0.0 - ~0.05)
-    // ============================================================
-    float interference = step(0.997, hash(vec2(floor(u_time * 15.0), floor(uv.y * 200.0)))) * 0.015;
-    vec3 interferenceColor = amber * interference;
+    float totalDark = clamp(scanDark + vigDark + flickerDark, 0.0, 1.0);
 
     // ============================================================
     // SALIDA FINAL
     //
-    // RGB = suma de todos los efectos de luz (grain + beam + haze + interference)
+    // RGB = sin efectos de luz aditivos
     // Alpha = oscuridad total (scanlines + vignette, modulados por flicker)
     //
     // El blending premultiplied alpha en JS (ONE, ONE_MINUS_SRC_ALPHA) hace que:
     //   - RGB se sume sobre el contenido de la pagina
     //   - Alpha oscurezca el contenido de la pagina
     // ============================================================
-    vec3 totalAdd = grain + beamColor + hazeColor + interferenceColor;
+    vec3 totalAdd = vec3(0.0);
 
     gl_FragColor = vec4(totalAdd, totalDark);
 }
@@ -222,9 +160,14 @@ function initCRT(): void {
     //   - opacity          → intensidad global (0.0 a 1.0)
     // ================================================================
     const bloomLayers = [
-        { blur: 0.5,  brightness: 1.25, opacity: 1 },
-        { blur: 4, brightness: 1.75, opacity: 0.25 },
-        { blur: 24, brightness: 1.25, opacity: 0.3 },
+        { blur: 0.5,  brightness: 1.1,  opacity: 0.45 },
+        { blur: 1.5,  brightness: 1.15, opacity: 0.3 },
+        { blur: 3,    brightness: 1.2,  opacity: 0.2 },
+        { blur: 6,    brightness: 1.25, opacity: 0.14 },
+        { blur: 12,   brightness: 1.2,  opacity: 0.1 },
+        { blur: 24,   brightness: 1.15, opacity: 0.07 },
+        { blur: 48,   brightness: 1.1,  opacity: 0.04 },
+        { blur: 80,   brightness: 1.05, opacity: 0.02 },
     ];
 
     bloomLayers.forEach(({ blur, brightness, opacity }) => {

@@ -3,12 +3,19 @@ import type { HTMLAttributes } from 'astro/types';
 
 interface Props extends HTMLAttributes<'a'> {
     href: string;
+    target?: '_blank' | '_self' | '_parent' | '_top';
 }
 
-const { href, class: className, ...rest } = Astro.props;
+const { href, target = '_self', class: className, ...rest } = Astro.props;
 ---
 
-<a href={href} class:list={["group inline-flex items-baseline gap-1", className]} {...rest}>
-    <span class="inline-block max-w-0 opacity-0 overflow-hidden group-hover:max-w-[1ch] group-hover:opacity-100 transition-[max-width,opacity] duration-300 ease-out">&gt;</span>
-    <span><slot /></span>
+<a href={href} target={target} class:list={["negative-color group inline-flex items-baseline my-1 py-0 px-2 gap-1", className]} {...rest}>
+    <span 
+        class="font-bold inline-block max-w-0 opacity-0 overflow-hidden group-hover:max-w-[1ch] group-hover:opacity-100 transition-[max-width,opacity] duration-300 ease-out"
+    >
+    &gt;
+    </span>
+    <span>
+        <slot />
+    </span>
 </a>

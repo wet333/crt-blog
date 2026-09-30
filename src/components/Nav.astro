@@ -1,12 +1,14 @@
 ---
 import Link from './Link.astro';
 
-const currentPath = Astro.url.pathname;
+const currentPath = Astro.url.pathname.replace(/\/+$/, '') || '/';
+// Los posts pertenecen a la seccion Inicio.
+const homeCurrent = currentPath === '/' ? 'page' : currentPath.startsWith('/blog/') ? 'true' : false;
 ---
 
-<nav class="border-terminal mb-8 p-2">
-    <ul class="flex justify-around list-none p-0 m-0">
-        <li class="m-0"><Link href="/" command="cd ~" class:list={["block py-2 px-4", { active: currentPath === '/' }]}>[ Inicio ]</Link></li>
-        <li class="m-0"><Link href="/about" command="cd ~/about" class:list={["block py-2 px-4", { active: currentPath === '/about/' || currentPath === '/about' }]}>[ Perfil ]</Link></li>
+<nav class="border-terminal mb-6 md:mb-8 p-2" aria-label="Principal">
+    <ul class="flex flex-wrap justify-around gap-2 list-none p-0 m-0">
+        <li class="m-0"><Link href="/" variant="menu" current={homeCurrent} class="py-2 min-h-11 content-center">[ Inicio ]</Link></li>
+        <li class="m-0"><Link href="/about" variant="menu" current={currentPath === '/about' && 'page'} class="py-2 min-h-11 content-center">[ Perfil ]</Link></li>
     </ul>
 </nav>

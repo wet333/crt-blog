@@ -11,22 +11,40 @@
 }
 
 @theme {
-    --color-amber-bright: #ffb000;
-    --color-amber-dim: #cc8c00;
-    --color-bg-black: #110d00;
-    --color-bg-dark: #000;
-    --font-family-terminal: 'DepartureMono', monospace;
+    /* Fosforo ambar en tres intensidades (contraste sobre bg-black) */
+    --color-amber-hot: #ffd060;    /* alta intensidad (strong) — 13.4:1 */
+    --color-amber-bright: #ffb000; /* texto y enlaces — 10.6:1 */
+    --color-amber-dim: #cc8c00;    /* bordes y metadatos — 6.8:1 */
+    --color-amber-faint: #a87400;  /* historial del prompt — 4.8:1 */
+    --color-bg-black: #110d00;     /* vidrio del tubo encendido */
+    --color-bg-dark: #000;         /* tubo apagado */
+
+    --font-terminal: 'DepartureMono', ui-monospace, monospace;
+    --default-font-family: var(--font-terminal);
+    --default-mono-font-family: var(--font-terminal);
+
+    /* Departure Mono se dibuja sobre una grilla de 11px: solo se usan multiplos de 5.5px
+       para que cada pixel de la fuente caiga entero en pantallas 1x/2x (si no, los trazos
+       salen irregulares). Estos son los valores mobile; en md+ se agrandan (ver @layer base). */
+    --text-meta: 0.6875rem;             /* 11px */
+    --text-body: 1.03125rem;            /* 16.5px */
+    --text-body--line-height: 1.6667;   /* 27.5px */
+    --text-title: 1.375rem;             /* 22px */
+    --text-title--line-height: 1.5;     /* 33px */
+    --text-prompt: 1.71875rem;          /* 27.5px */
+    --text-prompt--line-height: 1.2;
 }
 
 @utility border-terminal {
     border: 1px solid var(--color-amber-dim);
 }
 
+/* Video inverso. Sin negrita: la fuente solo tiene peso regular y la negrita sintetica
+   emborrona los pixeles. La sombra oscura compensa el bloom, que aclara los trazos. */
 @utility negative-color {
     color: var(--color-bg-black);
     background-color: var(--color-amber-bright);
-    text-shadow: none;
-    font-weight: bold;
+    text-shadow: 0 0 1px color-mix(in srgb, var(--color-bg-black) 80%, transparent);
 }
 
 @utility border-terminal-double {
@@ -43,42 +61,102 @@
 }
 
 @layer base {
-    * { box-sizing: border-box; }
+    @media (width >= 48rem) {
+        :root {
+            --text-meta: 1.03125rem;            /* 16.5px */
+            --text-body: 1.375rem;              /* 22px */
+            --text-body--line-height: 1.5;      /* 33px */
+            --text-title: 2.0625rem;            /* 33px */
+            --text-title--line-height: 1.3333;  /* 44px */
+            --text-prompt: 2.75rem;             /* 44px */
+        }
+    }
+
+    html {
+        color-scheme: dark;
+        scrollbar-color: var(--color-amber-dim) var(--color-bg-black);
+    }
 
     body {
-        font-family: var(--font-family-terminal);
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+        transition: opacity 150ms ease-out;
+    }
+
+    ::selection {
+        color: var(--color-bg-black);
+        background-color: var(--color-amber-bright);
+    }
+
+    :focus-visible {
+        outline: 2px dashed var(--color-amber-bright);
+        outline-offset: 3px;
     }
 
     h1, h2, h3, h4, h5, h6 {
         @apply font-normal mt-6 mb-2;
+        text-wrap: balance;
     }
 
-    h1 {
-        @apply text-5xl text-center pb-2.5;
+    /* h3-h6 heredan el tamano del cuerpo (como en una terminal, que tiene un solo tamano). */
+    h1, h2 {
+        font-size: var(--text-title);
+        line-height: var(--text-title--line-height);
     }
 
-    h2 { @apply text-2xl; }
-    h3 { @apply text-xl; }
+    :is(article, section) > :is(h1, h2, h3):first-child,
+    :is(article, section) > .sr-only:first-child + :is(h2, h3) {
+        @apply mt-0;
+    }
 
     p {
-        @apply leading-relaxed text-lg mb-4;
+        @apply mb-4;
+        text-wrap: pretty;
     }
 
+    /* Los enlaces dentro del texto se subrayan: todo el texto es ambar y el color solo no
+       alcanza para distinguirlos. El componente Link quita el subrayado. */
     a {
-        @apply text-amber-bright no-underline border-b border-transparent transition-all duration-200 cursor-pointer;
+        @apply text-amber-bright cursor-pointer underline underline-offset-4;
+        text-decoration-thickness: 0.09em;
+    }
+
+    /* Alta intensidad, como el "bold" de las terminales de fosforo: mas brillo en vez de
+       negrita sintetica, que emborrona la fuente pixel. */
+    strong {
+        font-weight: normal;
+        color: var(--color-amber-hot);
+        text-shadow:
+            0 0 0.25em color-mix(in srgb, var(--color-amber-bright) 60%, transparent),
+            0 0 0.08em var(--color-amber-bright);
     }
 
     pre {
-        @apply p-4 overflow-x-auto text-lg text-amber-bright;
-        margin: 2rem 0;
+        @apply p-3 my-6 md:p-4 md:my-8 overflow-x-auto text-amber-bright;
         border-radius: 1rem;
         border: 1px solid var(--color-amber-bright);
         box-shadow: inset 0 0 64px 4px rgba(0, 0, 0, 0.75);
+        tab-size: 4;
+    }
+
+    :not(pre) > code {
+        @apply bg-amber-bright/15 px-1;
     }
 
     blockquote {
         @apply border-l-3 border-amber-dim pl-4 ml-0 opacity-85;
     }
+
+    hr {
+        @apply my-8 border-t border-dashed border-amber-dim;
+    }
+
+    article :is(ul, ol) {
+        @apply mb-4 pl-[3ch];
+    }
+    article ul { list-style: "- "; }
+    article ol { list-style: decimal; }
+    article li::marker { color: var(--color-amber-dim); }
 
     img {
         filter: grayscale(1) contrast(1.1);
@@ -92,28 +170,136 @@
     }
 
     button, input, textarea {
-        @apply bg-transparent border-terminal text-amber-bright text-base p-2.5 w-full mb-4;
-        font-family: var(--font-family-terminal);
-        text-shadow: inherit;
+        @apply bg-transparent border-terminal text-amber-bright p-2.5 w-full mb-4;
     }
-    button:hover {
-        @apply text-black cursor-pointer;
-        text-shadow: none;
+    /* Solo con mouse: en pantallas tactiles el :hover queda pegado despues del toque */
+    @media (hover: hover) {
+        button:hover {
+            @apply negative-color cursor-pointer;
+        }
     }
 }
 
-#menu-toggle {
-    @apply hidden w-full bg-transparent border-none text-amber-bright text-2xl cursor-pointer text-left;
-    font-family: var(--font-family-terminal);
+@layer components {
+    /* Prompt del header, con el brillo extra del texto grande en un tubo real */
+    .prompt {
+        font-size: var(--text-prompt);
+        line-height: var(--text-prompt--line-height);
+        overflow-wrap: anywhere;
+        text-shadow: 0 0 0.3em color-mix(in srgb, var(--color-amber-bright) 45%, transparent);
+    }
+
+    .cursor {
+        display: inline-block;
+        width: 1ch;
+        height: 0.8em;
+        margin-left: 0.5ch;
+        vertical-align: -0.05em;
+        background-color: currentColor;
+        animation: cursor-blink 1.06s step-end infinite;
+    }
+
+    .panel-title {
+        @apply mt-0 mb-3 p-1 negative-color;
+        font-size: var(--text-body);
+        line-height: var(--text-body--line-height);
+    }
+
+    /* Interruptor de animaciones: se lee como una linea mas del estado del servidor */
+    .crt-toggle {
+        @apply w-auto m-0 -mx-1 px-1 py-0 border-0 text-left text-amber-bright hover:negative-color;
+    }
+    /* El estado va en video inverso, como todo lo clickeable del sitio */
+    .crt-toggle [data-state] {
+        @apply negative-color px-1;
+    }
+
+    /* Encendido del tubo: una linea horizontal brillante que se abre hasta llenar la
+       pantalla. Solo en la primera pagina de la sesion (clase crt-cold en BaseLayout). */
+    .crt-power {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10002;
+        pointer-events: none;
+        background: linear-gradient(rgb(255 240 200 / var(--crt-beam)), rgb(255 240 200 / var(--crt-beam))) center / 0% 2px no-repeat;
+    }
+    .crt-power::before,
+    .crt-power::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: calc(50% - 1px);
+        background-color: var(--color-bg-dark);
+    }
+    .crt-power::before { top: 0; }
+    .crt-power::after { bottom: 0; }
+
+    html.crt-cold .crt-power { display: block; }
+    /* El haz usa la misma curva que los paneles para que el destello llene justo la abertura. */
+    html.crt-cold:not(.crt-booting) .crt-power {
+        animation:
+            crt-beam-size 800ms cubic-bezier(0.6, 0, 0.2, 1) forwards,
+            crt-beam-glow 800ms ease-out forwards;
+    }
+    html.crt-cold:not(.crt-booting) .crt-power::before {
+        animation: crt-open-up 800ms cubic-bezier(0.6, 0, 0.2, 1) forwards;
+    }
+    html.crt-cold:not(.crt-booting) .crt-power::after {
+        animation: crt-open-down 800ms cubic-bezier(0.6, 0, 0.2, 1) forwards;
+    }
+
+    /* Animaciones apagadas (sistema o boton del footer) */
+    html[data-crt-motion="off"] .cursor { animation: none; }
+    html[data-crt-motion="off"] .crt-power { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+        .cursor { animation: none; }
+        .crt-power { display: none; }
+    }
 }
 
-@media (max-width: 768px) {
-    #menu-toggle { @apply block; }
-    nav ul {
-        @apply hidden flex-col border-t border-dashed border-amber-dim mt-2.5;
-    }
-    nav ul.open { @apply flex; }
-    nav a {
-        @apply text-center p-4 border-b border-dashed border-amber-dim;
-    }
+/* La pagina se oculta hasta que crt-effects.ts monta los efectos. Si el JS nunca
+   llega a quitar la clase, esta animacion la muestra igual a los 1.5s. */
+html.crt-booting body {
+    opacity: 0;
+    animation: crt-failsafe 0s 1.5s forwards;
+}
+
+@keyframes crt-failsafe {
+    to { opacity: 1; }
+}
+
+@keyframes cursor-blink {
+    50% { opacity: 0; }
+}
+
+/* Brillo del haz: se anima aparte para que los paneles negros sigan opacos
+   mientras el destello se desvanece. */
+@property --crt-beam {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0.9;
+}
+
+@keyframes crt-beam-size {
+    0%   { background-size: 0% 2px; }
+    25%  { background-size: 100% 2px; }
+    100% { background-size: 100% 100%; visibility: hidden; }
+}
+
+@keyframes crt-beam-glow {
+    0%, 25% { --crt-beam: 0.9; }
+    50%     { --crt-beam: 0.35; }
+    100%    { --crt-beam: 0; }
+}
+
+@keyframes crt-open-up {
+    0%, 25% { transform: translateY(0); }
+    100%    { transform: translateY(-100%); }
+}
+
+@keyframes crt-open-down {
+    0%, 25% { transform: translateY(0); }
+    100%    { transform: translateY(100%); }
 }

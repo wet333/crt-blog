@@ -1,5 +1,6 @@
 ---
 import Link from './Link.astro';
+import { commandForPath } from '../utils/terminal';
 
 interface Props {
     title: string;
@@ -7,18 +8,20 @@ interface Props {
     category: string;
     description: string;
     slug: string;
-    isLatest?: boolean;
 }
 
-const { title, date, category, description, slug, isLatest = false } = Astro.props;
+const { title, date, category, description, slug } = Astro.props;
 const formattedDate = date.toISOString().split('T')[0];
+const href = `/blog/${slug}`;
 ---
 
-<article class:list={[
-    "border-terminal p-4 mb-4"
-]}>
-    <h2 class="m-0 pb-3 border-b border-dotted border-amber-bright">{title}</h2>
-    <span class="opacity-60 text-sm mb-4 mt-[3px] block">Fecha: {formattedDate} | Categoría: {category}</span>
+<article class="border-terminal p-3 md:p-4 mb-4">
+    <h2 class="m-0 pb-3 border-b border-dotted border-amber-bright">
+        <a href={href} data-ps-command={commandForPath(href)} class="no-underline hover:underline">{title}</a>
+    </h2>
+    <p class="text-meta text-amber-dim mt-1 mb-4">
+        Fecha: <time datetime={formattedDate}>{formattedDate}</time> | Categoría: {category}
+    </p>
     <p>{description}</p>
-    <Link href={`/blog/${slug}`} command={`cat ~/blog/${slug}`}>LEER MÁS</Link>
+    <Link href={href}>LEER MÁS<span class="sr-only">: {title}</span></Link>
 </article>

@@ -6,9 +6,9 @@ interface Props extends HTMLAttributes<'img'> {
     alt: string;
 }
 
-const { class: className, ...rest } = Astro.props;
+const { class: className, loading = 'lazy', decoding = 'async', ...rest } = Astro.props;
 ---
 
 <div class:list={["img-amber", className]}>
-    <img class="w-full h-auto" {...rest} />
+    <img class="w-full h-auto" loading={loading} decoding={decoding} {...rest} />
 </div>

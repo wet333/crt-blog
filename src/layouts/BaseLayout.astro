@@ -1,9 +1,18 @@
 ---
 import '../styles/global.css';
-import { getTerminalPS } from '../utils/terminal';
+import { cwdForPath, getTerminalPS } from '../utils/terminal';
 import Header from '../components/Header.astro';
 
-const title = getTerminalPS(Astro.url.pathname);
+interface Props {
+    title?: string;
+    description?: string;
+}
+
+const {
+    title,
+    description = 'Blog de wet333 sobre desarrollo de software, con estética de terminal CRT ámbar.',
+} = Astro.props;
+const pageTitle = title ? `${title} | wet333@PC` : getTerminalPS(cwdForPath(Astro.url.pathname) ?? '~');
 ---
 
 <!DOCTYPE html>
@@ -11,11 +20,31 @@ const title = getTerminalPS(Astro.url.pathname);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title}</title>
+    <meta name="description" content={description}>
+    <!-- Mismo valor que --color-bg-black en global.css -->
+    <meta name="theme-color" content="#110d00">
+    <meta name="color-scheme" content="dark">
+    <title>{pageTitle}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="/fonts/DepartureMono-1.500/DepartureMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+    <script is:inline>
+        // Oculta la pagina hasta que crt-effects.ts termina de montar los efectos (evita un
+        // frame sin scanlines). Si el JS falla, una animacion CSS de respaldo la muestra igual.
+        document.documentElement.classList.add('crt-booting');
+        try {
+            // Encendido del tubo solo en la primera pagina de la sesion.
+            if (!sessionStorage.getItem('crt-powered')) {
+                sessionStorage.setItem('crt-powered', '1');
+                document.documentElement.classList.add('crt-cold');
+            }
+        } catch {}
+    </script>
 </head>
-<body class="max-w-[960px] mx-auto p-5 text-amber-bright min-h-screen relative z-10 md:p-5 max-md:p-2.5 max-md:border-none" style="opacity: 0; transition: opacity 50ms ease;">
+<body class="max-w-[960px] mx-auto px-4 py-5 md:p-5 text-amber-bright min-h-screen relative z-10">
+    <a href="#contenido" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10003] negative-color px-3 py-2 no-underline">Saltar al contenido</a>
     <Header />
     <slot />
+    <div class="crt-power" aria-hidden="true"></div>
     <script src="../scripts/crt-effects.ts"></script>
 </body>
 </html>

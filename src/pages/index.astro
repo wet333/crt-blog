@@ -14,42 +14,52 @@ const posts = (await getCollection('blog')).sort(
 
 <BaseLayout>
     <Nav />
-    <main class="flex flex-wrap gap-5">
+    <main id="contenido" class="flex flex-wrap gap-5">
+        <h1 class="sr-only">Blog de wet333</h1>
 
-        <section class="grow-6 shrink basis-0">
-            {posts.map((post, i) => (
+        <!-- Debajo de lg los posts ocupan todo el ancho y el aside pasa abajo -->
+        <section class="grow-6 shrink basis-full lg:basis-0" aria-label="Posts">
+            {posts.map((post) => (
                 <PostCard
                     title={post.data.title}
                     date={post.data.date}
                     category={post.data.category}
                     description={post.data.description}
                     slug={post.id}
-                    isLatest={i === 0}
                 />
             ))}
         </section>
 
-        <aside class="grow shrink basis-[250px]">
-            <section class="border-terminal p-4 mb-5">
-                <h3 class="mt-0 p-1 font-bold negative-color">Estado del servidor</h3>
-                <AmberImg 
-                    class="my-4" 
-                    src="https://images.unsplash.com/photo-1506399558188-acca6f8cbf41?q=80&w=1873&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-                    alt="Server" 
+        <aside class="grow shrink basis-[250px] text-body md:text-meta md:grid md:grid-cols-2 md:gap-x-5 md:items-start lg:block">
+            <section class="border-terminal p-3 md:p-4 mb-5">
+                <h2 class="panel-title">Estado del servidor</h2>
+                <AmberImg
+                    class="mb-4"
+                    src="https://images.unsplash.com/photo-1506399558188-acca6f8cbf41?q=80&w=800&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                    alt="Racks de servidores en un centro de datos"
+                    width="800"
+                    height="480"
                 />
                 <ul>
                     <li>Uptime: 4503 días</li>
                     <li>Temp: 34°C</li>
                     <li>Cores: active</li>
+                    <!-- Lo muestra y controla crt-effects.ts; sin JS no hay animaciones que pausar. -->
+                    <li>
+                        <button type="button" id="crt-motion-toggle" class="crt-toggle" aria-pressed="true" hidden>
+                            Animaciones: <span aria-hidden="true" data-state>[ON]</span>
+                        </button>
+                    </li>
                 </ul>
             </section>
 
-            <section class="border-terminal p-4 mb-5">
-                <h3 class="mt-0 p-1 font-bold negative-color">Top Posts</h3>
-                <ul class="list-none p-0">
+            <!-- En telefonos repetiria la lista de posts que esta justo arriba -->
+            <section class="border-terminal p-3 md:p-4 mb-5 hidden md:block">
+                <h2 class="panel-title">Top Posts</h2>
+                <ul class="list-none p-0 m-0 space-y-2">
                     {posts.map((post, i) => (
                         <li>
-                            <Link href={`/blog/${post.id}`} command={`cat ~/blog/${post.id}`}>
+                            <Link href={`/blog/${post.id}`}>
                                 {post.data.title}{i === 0 ? ' (último)' : ''}
                             </Link>
                         </li>

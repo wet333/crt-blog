@@ -9,10 +9,10 @@ interface Props {
 const { backLink, backText } = Astro.props;
 ---
 
-<footer class="text-center mt-12 pt-4 text-sm" style="border-top: 4px double var(--color-amber-dim);">
+<footer class="text-center mt-12 pt-4 border-t-4 border-double border-amber-dim">
     {backLink && backText ? (
-        <p><Link href={backLink} command={`cd ${backLink === '/' ? '~' : '~' + backLink}`}>{backText}</Link></p>
+        <p><Link href={backLink}>{backText}</Link></p>
     ) : (
-        <p>Made by <Link href="https://github.com/wet333" target="_blank" command="wget https://github.com/wet333">_wet333</Link></p>
+        <p>Made by <Link href="https://github.com/wet333" target="_blank">_wet333</Link></p>
     )}
 </footer>

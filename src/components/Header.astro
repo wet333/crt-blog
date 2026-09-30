@@ -1,36 +1,62 @@
 ---
-import { getTerminalPS } from '../utils/terminal';
+import { SEED_HISTORY, cwdForPath, getTerminalPS } from '../utils/terminal';
 
-const heading = getTerminalPS(Astro.url.pathname);
+// El prompt refleja el directorio de la URL; en los posts (que no cambian de directorio)
+// el script lo reemplaza por el directorio guardado en el historial.
+const prompt = getTerminalPS(cwdForPath(Astro.url.pathname) ?? '~');
+const HISTORY_LINES = 5;
+// En mobile solo las ultimas lineas: el historial es decorativo y empujaba el contenido.
+const MOBILE_HISTORY_LINES = 2;
 ---
 
-<header class="mb-6 flex flex-col items-start justify-end min-h-[8rem]">
-    <div class="flex flex-col items-start gap-1" id="ps-history"></div>
-    <h1 class="mt-[0.3rem]" id="ps-current">{heading}</h1>
+<header class="mb-6">
+    <!-- Decorativo: se oculta a lectores de pantalla. Las lineas se renderizan en el servidor
+         para que el alto quede reservado y el header no salte al cargar el historial real. -->
+    <ol id="ps-history" class="list-none m-0 p-0 text-meta text-amber-faint" aria-hidden="true">
+        {SEED_HISTORY.slice(-HISTORY_LINES).map((entry, i) => (
+            <li class:list={[
+                "whitespace-nowrap overflow-hidden text-ellipsis",
+                i < HISTORY_LINES - MOBILE_HISTORY_LINES && "hidden md:block",
+            ]}>{entry}</li>
+        ))}
+    </ol>
+    <p class="prompt m-0 mt-1">
+        <span id="ps-current">{prompt}</span><span class="cursor" aria-hidden="true"></span>
+    </p>
 </header>
 
 <script>
-    import { getPSHistory, getCurrentLocation } from '../scripts/ps-history';
+    import { addPS, getPSHistory, getCurrentLocation, syncPSWithPath } from '../scripts/ps-history';
+    import { getTerminalPS } from '../utils/terminal';
 
     function render() {
-        const history = getPSHistory(5);
-        const location = getCurrentLocation();
+        const lines = document.querySelectorAll<HTMLLIElement>('#ps-history li');
+        const history = getPSHistory(lines.length);
+        const offset = lines.length - history.length;
+        lines.forEach((line, i) => {
+            line.textContent = history[i - offset] ?? ' ';
+        });
 
-        const historyContainer = document.getElementById('ps-history');
-        const currentEl = document.getElementById('ps-current');
-
-        if (historyContainer) {
-            historyContainer.innerHTML = history
-                .map(entry => `<span class="text-sm opacity-40">${entry}</span>`)
-                .join('');
-        }
-
-        if (currentEl) {
-            currentEl.textContent = `wet333@PC:${location}$`;
-        }
+        const current = document.getElementById('ps-current');
+        if (current) current.textContent = getTerminalPS(getCurrentLocation());
     }
 
-    render();
-    document.body.style.opacity = '1';
+    function sync() {
+        syncPSWithPath(window.location.pathname);
+        render();
+    }
+
+    // Registra el comando de cualquier link marcado, incluidos los que se agreguen despues.
+    document.addEventListener('click', (event) => {
+        const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[data-ps-command]');
+        const command = link?.dataset.psCommand;
+        if (command) addPS(command);
+    });
+
+    sync();
     window.addEventListener('ps-history-updated', render);
+    // Al volver con el boton atras la pagina puede salir del bfcache sin re-ejecutar scripts.
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) sync();
+    });
 </script>

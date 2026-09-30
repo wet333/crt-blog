@@ -1,6 +1,8 @@
 # CRT Ambar — Astro Blog
 
-Blog con estética retro de terminal CRT en tonos ámbar, construido con **Astro.js**. El estilo se aplica con CSS classless sobre etiquetas HTML semánticas. Incluye efectos visuales tipo CRT: scanlines, flicker y ruido.
+Blog con estética retro de terminal CRT en tonos ámbar, construido con **Astro.js**. El estilo se aplica con CSS classless sobre etiquetas HTML semánticas. Incluye efectos visuales tipo CRT: scanlines, bloom de fósforo, esquinas del tubo, flicker, ruido y encendido de pantalla. Las animaciones se pueden apagar desde el footer y respetan `prefers-reduced-motion`.
+
+Las decisiones de diseño (colores, escala tipográfica, efectos) están en [DESIGN.md](DESIGN.md).
 
 ![Screenshot del sitio](Screenshot%202026-02-10%20202513.png)
 
@@ -8,13 +10,14 @@ Blog con estética retro de terminal CRT en tonos ámbar, construido con **Astro
 
 ```
 src/
-├── components/       # Nav, Header, Footer, PostCard
+├── components/       # Nav, Header, Footer, PostCard, Link, AmberImg
 ├── content/
 │   └── blog/         # Posts en Markdown con frontmatter
 ├── layouts/          # BaseLayout, PageLayout, BlogPostLayout
 ├── pages/            # index, about, blog/[...slug]
-├── scripts/          # Efectos CRT
-├── styles/           # CSS classless terminal
+├── scripts/          # Efectos CRT (WebGL) e historial del prompt
+├── styles/           # CSS classless terminal y tokens de diseño
+├── utils/            # Prompt: rutas → comandos de shell
 └── content.config.ts # Schema de content collections
 ```
 

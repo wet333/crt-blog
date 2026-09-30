@@ -7,19 +7,22 @@ interface Props {
     title: string;
     date: Date;
     category: string;
+    description: string;
 }
 
-const { title, date, category } = Astro.props;
+const { title, date, category, description } = Astro.props;
 const formattedDate = date.toISOString().split('T')[0];
 ---
 
-<BaseLayout>
+<BaseLayout title={title} description={description}>
     <Nav />
 
-    <main class="flex flex-wrap gap-5">
-        <article class="border-terminal p-5 grow-3 shrink basis-[600px]">
-            <h2>{title}</h2>
-            <span class="opacity-70 text-sm mb-4 block">Fecha: {formattedDate} | Categoría: {category}</span>
+    <main id="contenido" class="flex flex-wrap gap-5">
+        <article class="post-content border-terminal p-4 md:p-5 grow-3 shrink basis-[600px] min-w-0">
+            <h1 class="pb-3 border-b border-dotted border-amber-bright">{title}</h1>
+            <p class="text-meta text-amber-dim mt-1 mb-6">
+                Fecha: <time datetime={formattedDate}>{formattedDate}</time> | Categoría: {category}
+            </p>
             <slot />
         </article>
     </main>
